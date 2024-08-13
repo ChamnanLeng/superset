@@ -147,7 +147,6 @@ class GenericDataType(IntEnum):
 
 
 class DatasourceType(StrEnum):
-    SLTABLE = "sl_table"
     TABLE = "table"
     DATASET = "dataset"
     QUERY = "query"
@@ -168,6 +167,7 @@ class HeaderDataType(TypedDict):
     notification_source: str | None
     chart_id: int | None
     dashboard_id: int | None
+    slack_channels: list[str] | None
 
 
 class DatasourceDict(TypedDict):
@@ -218,6 +218,7 @@ class FilterOperator(StrEnum):
     GREATER_THAN_OR_EQUALS = ">="
     LESS_THAN_OR_EQUALS = "<="
     LIKE = "LIKE"
+    NOT_LIKE = "NOT LIKE"
     ILIKE = "ILIKE"
     IS_NULL = "IS NULL"
     IS_NOT_NULL = "IS NOT NULL"
@@ -433,7 +434,7 @@ def error_msg_from_exception(ex: Exception) -> str:
             msg = ex.message.get("message")  # type: ignore
         elif ex.message:
             msg = ex.message
-    return msg or str(ex)
+    return str(msg) or str(ex)
 
 
 def markdown(raw: str, markup_wrap: bool | None = False) -> str:
@@ -711,9 +712,10 @@ def send_email_smtp(  # pylint: disable=invalid-name,too-many-arguments,too-many
     recipients = smtp_mail_to
     if cc:
         smtp_mail_cc = get_email_address_list(cc)
-        msg["CC"] = ", ".join(smtp_mail_cc)
+        msg["Cc"] = ", ".join(smtp_mail_cc)
         recipients = recipients + smtp_mail_cc
 
+    smtp_mail_bcc = []
     if bcc:
         # don't add bcc in header
         smtp_mail_bcc = get_email_address_list(bcc)
@@ -764,6 +766,11 @@ def send_email_smtp(  # pylint: disable=invalid-name,too-many-arguments,too-many
     msg_mutator = config["EMAIL_HEADER_MUTATOR"]
     # the base notification returns the message without any editing.
     new_msg = msg_mutator(msg, **(header_data or {}))
+    new_to = new_msg["To"].split(", ") if "To" in new_msg else []
+    new_cc = new_msg["Cc"].split(", ") if "Cc" in new_msg else []
+    new_recipients = new_to + new_cc + smtp_mail_bcc
+    if set(new_recipients) != set(recipients):
+        recipients = new_recipients
     send_mime_email(smtp_mail_from, recipients, new_msg, config, dryrun=dryrun)
 
 
@@ -1051,16 +1058,23 @@ def is_adhoc_column(column: Column) -> TypeGuard[AdhocColumn]:
     )
 
 
+def is_base_axis(column: Column) -> bool:
+    return is_adhoc_column(column) and column.get("columnType") == "BASE_AXIS"
+
+
+def get_base_axis_columns(columns: list[Column] | None) -> list[Column]:
+    return [column for column in columns or [] if is_base_axis(column)]
+
+
+def get_non_base_axis_columns(columns: list[Column] | None) -> list[Column]:
+    return [column for column in columns or [] if not is_base_axis(column)]
+
+
 def get_base_axis_labels(columns: list[Column] | None) -> tuple[str, ...]:
-    axis_cols = [
-        col
-        for col in columns or []
-        if is_adhoc_column(col) and col.get("columnType") == "BASE_AXIS"
-    ]
-    return tuple(get_column_name(col) for col in axis_cols)
+    return tuple(get_column_name(column) for column in get_base_axis_columns(columns))
 
 
-def get_xaxis_label(columns: list[Column] | None) -> str | None:
+def get_x_axis_label(columns: list[Column] | None) -> str | None:
     labels = get_base_axis_labels(columns)
     return labels[0] if labels else None
 

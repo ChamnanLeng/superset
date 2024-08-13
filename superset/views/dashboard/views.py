@@ -34,7 +34,7 @@ from superset import db, event_logger, is_feature_enabled
 from superset.constants import MODEL_VIEW_RW_METHOD_PERMISSION_MAP, RouteMethod
 from superset.models.dashboard import Dashboard as DashboardModel
 from superset.superset_typing import FlaskResponse
-from superset.utils import json as json_utils
+from superset.utils import json
 from superset.views.base import (
     BaseSupersetView,
     common_bootstrap_payload,
@@ -122,7 +122,7 @@ class Dashboard(BaseSupersetView):
             owners=[g.user],
         )
         db.session.add(new_dashboard)
-        db.session.commit()
+        db.session.commit()  # pylint: disable=consider-using-transaction
         return redirect(f"/superset/dashboard/{new_dashboard.id}/?edit=true")
 
     @expose("/<dashboard_id_or_slug>/embedded")
@@ -159,8 +159,8 @@ class Dashboard(BaseSupersetView):
         return self.render_template(
             "superset/spa.html",
             entry="embedded",
-            bootstrap_data=json_utils.dumps(
-                bootstrap_data, default=json_utils.pessimistic_json_iso_dttm_ser
+            bootstrap_data=json.dumps(
+                bootstrap_data, default=json.pessimistic_json_iso_dttm_ser
             ),
         )
 
