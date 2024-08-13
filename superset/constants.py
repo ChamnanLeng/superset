@@ -27,8 +27,7 @@ USER_AGENT = "Apache Superset"
 NULL_STRING = "<NULL>"
 EMPTY_STRING = "<empty string>"
 
-# Change Secrete Key
-CHANGE_ME_SECRET_KEY = "81npTN+emyU7dbBnzR2GJ+VRTtbsCa57MJZP/5dtOJJkOMFYLvGIDfrQ"
+CHANGE_ME_SECRET_KEY = "YOUR_OWN_RANDOM_GENERATED_SECRET_KEY"
 
 # UUID for the examples database
 EXAMPLES_DB_UUID = "a2dc77af-e654-49bb-b321-40f6b559a1ee"
