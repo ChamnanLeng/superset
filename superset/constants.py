@@ -27,6 +27,7 @@ USER_AGENT = "Apache Superset"
 NULL_STRING = "<NULL>"
 EMPTY_STRING = "<empty string>"
 
+# Change Secrete Key
 CHANGE_ME_SECRET_KEY = "81npTN+emyU7dbBnzR2GJ+VRTtbsCa57MJZP/5dtOJJkOMFYLvGIDfrQ"
 
 # UUID for the examples database
